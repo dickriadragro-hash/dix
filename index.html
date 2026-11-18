@@ -1,0 +1,2263 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IT Helpdesk E-Ticket &amp; Auto Daily Checklist</title>
+    <meta
+      name="description"
+      content="Enterprise IT Helpdesk E-Ticket management with automatic Daily Checklist generation and end-of-day WhatsApp, CSV, and PDF reporting."
+    />
+    <meta property="og:title" content="IT Helpdesk E-Ticket &amp; Auto Daily Checklist" />
+    <meta
+      property="og:description"
+      content="Enterprise IT Helpdesk E-Ticket management with automatic Daily Checklist generation and end-of-day WhatsApp, CSV, and PDF reporting."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .tabular-nums {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .toast-enter {
+        animation: toastSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes toastSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .toast-enter {
+          animation: none;
+        }
+        * {
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @media print {
+        body {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .print-only {
+          display: block !important;
+        }
+        .print-container {
+          max-width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        .print-card {
+          border: 1px solid #cbd5e1 !important;
+          box-shadow: none !important;
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+    <!-- Top Bar Navigation (3-Zone Enterprise Contract) -->
+    <header class="no-print sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+      <div class="mx-auto flex max-w-[1360px] items-center justify-between gap-2 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3 lg:gap-8">
+        <!-- Zone 1: Wordmark -->
+        <div class="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <i data-lucide="shield-check" class="h-4 w-4"></i>
+          </div>
+          <span class="truncate text-sm font-bold tracking-tight text-slate-900 sm:text-lg">
+            IT Helpdesk &amp; Daily Checklist
+          </span>
+        </div>
+
+        <!-- Zone 2: Primary Tab Navigation -->
+        <nav class="hidden items-center gap-6 md:flex" role="tablist" aria-label="Navigasi Modul Utama">
+          <button
+            type="button"
+            id="nav-tab-tickets"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-tickets"
+            onclick="switchTab('tickets')"
+            class="relative py-2 text-sm font-semibold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+          >
+            Manajemen E-Ticket
+          </button>
+          <button
+            type="button"
+            id="nav-tab-checklist"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-checklist"
+            onclick="switchTab('checklist')"
+            class="relative py-2 text-sm font-semibold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+          >
+            Daily Checklist Harian
+          </button>
+        </nav>
+
+        <!-- Zone 3: Single Primary Action -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onclick="focusNewTicketForm()"
+            class="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 whitespace-nowrap shrink-0 sm:min-h-[40px] sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+          >
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            <span>Tiket Baru</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Tab Switcher -->
+      <div class="flex border-t border-slate-100 px-4 md:hidden" role="tablist" aria-label="Navigasi Modul Mobile">
+        <button
+          type="button"
+          id="mobile-tab-tickets"
+          onclick="switchTab('tickets')"
+          class="flex-1 py-2.5 text-center text-xs font-semibold whitespace-nowrap transition-colors"
+        >
+          Manajemen E-Ticket
+        </button>
+        <button
+          type="button"
+          id="mobile-tab-checklist"
+          onclick="switchTab('checklist')"
+          class="flex-1 py-2.5 text-center text-xs font-semibold whitespace-nowrap transition-colors"
+        >
+          Daily Checklist Harian
+        </button>
+      </div>
+    </header>
+
+    <!-- Print-Only Document Header -->
+    <div class="print-only hidden border-b border-slate-300 pb-4 mb-6 px-6 pt-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">Laporan Harian IT Helpdesk &amp; Daily Checklist</h1>
+          <p class="mt-1 text-sm text-slate-600">Ringkasan Rutinitas Operasional IT &amp; Penyelesaian E-Ticket</p>
+        </div>
+        <div class="text-right font-mono text-xs text-slate-600">
+          <div id="print-date-label">Tanggal: -</div>
+          <div id="print-generated-label">Dicetak: -</div>
+        </div>
+      </div>
+    </div>
+
+    <main class="print-container mx-auto max-w-[1360px] px-4 py-6 sm:px-6">
+      <!-- KPI Summary Strip -->
+      <section aria-label="Ringkasan KPI Operasional" class="no-print mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- KPI 1 -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Total Tiket Hari Ini</span>
+            <i data-lucide="ticket" class="h-4 w-4 text-slate-400"></i>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between gap-2">
+            <span id="kpi-total-today" class="font-mono text-2xl font-bold tracking-tight text-slate-900 tabular-nums">0</span>
+            <span id="kpi-today-date" class="font-mono text-xs text-slate-500 tabular-nums">-</span>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Open / In-Progress</span>
+            <i data-lucide="clock" class="h-4 w-4 text-amber-600"></i>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between gap-2">
+            <span id="kpi-active-count" class="font-mono text-2xl font-bold tracking-tight text-slate-900 tabular-nums">0</span>
+            <span id="kpi-active-breakdown" class="text-xs text-slate-500 tabular-nums">0 Open · 0 Proses</span>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Solved Today</span>
+            <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-600"></i>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between gap-2">
+            <span id="kpi-solved-today" class="font-mono text-2xl font-bold tracking-tight text-emerald-700 tabular-nums">0</span>
+            <span class="text-xs text-slate-500">Otomatis ke Checklist</span>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-500">Progress Daily Checklist</span>
+            <span id="kpi-checklist-fraction" class="font-mono text-xs font-medium text-slate-500 tabular-nums">0/0</span>
+          </div>
+          <div class="mt-2 flex items-center gap-3">
+            <span id="kpi-checklist-percent" class="font-mono text-2xl font-bold tracking-tight text-indigo-600 tabular-nums">0%</span>
+            <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="kpi-progress-bar-container">
+              <div
+                id="kpi-progress-bar-fill"
+                class="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 1: MANAJEMEN E-TICKET -->
+      <section id="panel-tickets" role="tabpanel" aria-labelledby="nav-tab-tickets" class="space-y-6">
+        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <!-- Left Column: Form Tambah Tiket Baru -->
+          <div class="rounded-xl border border-slate-200 bg-white p-5">
+            <div class="mb-4 border-b border-slate-100 pb-3">
+              <h1 class="text-base font-bold text-slate-900">Buat E-Ticket Baru</h1>
+              <p class="mt-0.5 text-xs text-slate-500">
+                Catat kendala pengguna dan tetapkan prioritas SLA serta teknisi PIC.
+              </p>
+            </div>
+
+            <form id="create-ticket-form" novalidate class="space-y-4">
+              <div id="create-form-error" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700" role="alert"></div>
+
+              <div>
+                <label for="ticket-user-name" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Nama User <span class="text-red-600">*</span>
+                </label>
+                <input
+                  id="ticket-user-name"
+                  type="text"
+                  required
+                  placeholder="Contoh: Rina Kusuma"
+                  class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div>
+                  <label for="ticket-department" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Departemen <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="ticket-department"
+                    type="text"
+                    list="department-options"
+                    required
+                    placeholder="Contoh: Finance"
+                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  />
+                  <datalist id="department-options">
+                    <option value="Finance"></option>
+                    <option value="HRD"></option>
+                    <option value="Operasional"></option>
+                    <option value="Sales &amp; Marketing"></option>
+                    <option value="Gudang &amp; Logistik"></option>
+                    <option value="Procurement"></option>
+                    <option value="Direksi"></option>
+                  </datalist>
+                </div>
+
+                <div>
+                  <label for="ticket-category" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Kategori <span class="text-red-600">*</span>
+                  </label>
+                  <select
+                    id="ticket-category"
+                    required
+                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="Network">Network</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software">Software</option>
+                    <option value="Server/Active Directory">Server/Active Directory</option>
+                    <option value="Printer/Peripheral">Printer/Peripheral</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div>
+                  <label for="ticket-priority" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Prioritas SLA <span class="text-red-600">*</span>
+                  </label>
+                  <select
+                    id="ticket-priority"
+                    required
+                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="Low">Low (SLA 24h)</option>
+                    <option value="Medium" selected>Medium (SLA 8h)</option>
+                    <option value="High">High (SLA 4h)</option>
+                    <option value="Critical">Critical (SLA 1h)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="ticket-pic" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Penanggung Jawab (PIC)
+                  </label>
+                  <select
+                    id="ticket-pic"
+                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="Belum Ditugaskan">Belum Ditugaskan</option>
+                    <option value="Andi Pratama">Andi Pratama</option>
+                    <option value="Budi Santoso">Budi Santoso</option>
+                    <option value="Citra Lestari">Citra Lestari</option>
+                    <option value="Dimas Wijaya">Dimas Wijaya</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label for="ticket-description" class="mb-1.5 block text-xs font-semibold text-slate-700">
+                  Deskripsi Masalah <span class="text-red-600">*</span>
+                </label>
+                <textarea
+                  id="ticket-description"
+                  rows="3"
+                  required
+                  placeholder="Jelaskan gejala kendala, perangkat terdampak, atau pesan error..."
+                  class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                class="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+              >
+                <i data-lucide="send" class="h-4 w-4"></i>
+                <span>Submit E-Ticket</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Filter & Daftar Tiket -->
+          <div class="min-w-0 space-y-4">
+            <!-- Filter & View Controls -->
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">Antrean &amp; Daftar E-Ticket</h2>
+                  <p id="ticket-filter-summary" class="mt-0.5 text-xs text-slate-500">Menampilkan semua tiket</p>
+                </div>
+
+                <!-- View Toggle -->
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                  <div class="inline-flex rounded-lg bg-slate-100 p-1" role="group" aria-label="Mode Tampilan Tiket">
+                    <button
+                      type="button"
+                      id="view-btn-table"
+                      onclick="setViewMode('table')"
+                      class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors"
+                    >
+                      <i data-lucide="table-2" class="h-3.5 w-3.5"></i>
+                      <span>Tabel</span>
+                    </button>
+                    <button
+                      type="button"
+                      id="view-btn-kanban"
+                      onclick="setViewMode('kanban')"
+                      class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors"
+                    >
+                      <i data-lucide="columns-3" class="h-3.5 w-3.5"></i>
+                      <span>Kanban</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Advanced Filter Inputs -->
+              <div class="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="relative">
+                  <label for="filter-search" class="sr-only">Cari tiket</label>
+                  <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+                  <input
+                    id="filter-search"
+                    type="search"
+                    placeholder="Cari ID, user, deskripsi..."
+                    oninput="handleFilterChange()"
+                    class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  />
+                </div>
+
+                <div>
+                  <label for="filter-status" class="sr-only">Filter Status</label>
+                  <select
+                    id="filter-status"
+                    onchange="handleFilterChange()"
+                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="All">Status: Semua</option>
+                    <option value="Open">Status: Open</option>
+                    <option value="In Progress">Status: In Progress</option>
+                    <option value="Solved">Status: Solved</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="filter-priority" class="sr-only">Filter Prioritas</label>
+                  <select
+                    id="filter-priority"
+                    onchange="handleFilterChange()"
+                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="All">Prioritas: Semua</option>
+                    <option value="Critical">Prioritas: Critical</option>
+                    <option value="High">Prioritas: High</option>
+                    <option value="Medium">Prioritas: Medium</option>
+                    <option value="Low">Prioritas: Low</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="filter-pic" class="sr-only">Filter Penanggung Jawab</label>
+                  <select
+                    id="filter-pic"
+                    onchange="handleFilterChange()"
+                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                  >
+                    <option value="All">PIC: Semua</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="active-filter-bar" class="mt-3 hidden items-center justify-between border-t border-slate-100 pt-3">
+                <span class="text-xs text-slate-500">Filter lanjutan aktif</span>
+                <button
+                  type="button"
+                  onclick="resetFilters()"
+                  class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:outline-none focus-visible:underline"
+                >
+                  <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+                  <span>Reset Filter</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tickets List Container (Table or Kanban) -->
+            <div id="tickets-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: DAILY CHECKLIST HARIAN -->
+      <section id="panel-checklist" role="tabpanel" aria-labelledby="nav-tab-checklist" class="hidden space-y-6">
+        <!-- Toolbar Date Picker & End-of-Day Export -->
+        <div class="no-print rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">Daily Checklist Harian</h1>
+              <p class="mt-0.5 text-xs text-slate-500">
+                Gabungan rutinitas IT harian dan tiket berstatus Solved yang masuk otomatis untuk laporan sore.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2.5">
+              <!-- Date Picker -->
+              <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+                <label for="checklist-date-picker" class="text-xs font-semibold text-slate-600 whitespace-nowrap">
+                  Tanggal:
+                </label>
+                <input
+                  id="checklist-date-picker"
+                  type="date"
+                  onchange="handleChecklistDateChange()"
+                  class="bg-transparent font-mono text-xs font-semibold text-slate-900 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onclick="selectTodayChecklistDate()"
+                  class="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                >
+                  Hari Ini
+                </button>
+              </div>
+
+              <!-- Export Buttons -->
+              <button
+                type="button"
+                onclick="copyWhatsAppReport()"
+                class="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 whitespace-nowrap shrink-0"
+              >
+                <i data-lucide="copy" class="h-3.5 w-3.5"></i>
+                <span>Copy Laporan WA/Email</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="exportChecklistCsv()"
+                class="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 whitespace-nowrap shrink-0"
+              >
+                <i data-lucide="download" class="h-3.5 w-3.5"></i>
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="printDailyReport()"
+                class="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 whitespace-nowrap shrink-0"
+              >
+                <i data-lucide="printer" class="h-3.5 w-3.5"></i>
+                <span>Print PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Sections Grid -->
+        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <!-- Seksi 1: Rutinitas Harian IT (Static Checklist) -->
+          <div class="print-card rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5">
+            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-3.5">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">1. Rutinitas Harian IT</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Daftar pengecekan infrastruktur dan pemeliharaan tetap.</p>
+              </div>
+              <span id="routine-progress-label" class="font-mono text-xs font-semibold text-indigo-600 tabular-nums whitespace-nowrap">
+                0/0 Selesai
+              </span>
+            </div>
+
+            <!-- Add Routine Form -->
+            <form id="add-routine-form" class="no-print mt-4 flex flex-col gap-2 sm:flex-row">
+              <div class="flex-1">
+                <label for="new-routine-title" class="sr-only">Tambah tugas rutinitas baru</label>
+                <input
+                  id="new-routine-title"
+                  type="text"
+                  required
+                  placeholder="Tambah tugas rutinitas harian..."
+                  class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+                />
+              </div>
+              <div class="flex gap-2">
+                <label for="new-routine-category" class="sr-only">Kategori rutinitas</label>
+                <select
+                  id="new-routine-category"
+                  class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-medium text-slate-700 focus:border-indigo-600 focus:bg-white focus:outline-none"
+                >
+                  <option value="Server">Server</option>
+                  <option value="Network">Network</option>
+                  <option value="Security">Security</option>
+                  <option value="Storage">Storage</option>
+                  <option value="General">General</option>
+                </select>
+                <button
+                  type="submit"
+                  class="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 whitespace-nowrap"
+                >
+                  <i data-lucide="plus" class="h-3.5 w-3.5"></i>
+                  <span>Tambah</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Routine Checklist Items -->
+            <ul id="routine-checklist-list" class="mt-4 divide-y divide-slate-100"></ul>
+          </div>
+
+          <!-- Seksi 2: Tiket Solved Hari Ini (Dynamic Auto-Checklist) -->
+          <div class="print-card rounded-xl border border-slate-200 bg-white p-5 lg:col-span-7">
+            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-3.5">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">2. Tiket Solved Hari Ini (Auto-Checklist)</h2>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  Masuk otomatis saat tiket berstatus Solved. Centang verifikasi akhir sebelum laporan sore.
+                </p>
+              </div>
+              <span id="solved-checklist-label" class="font-mono text-xs font-semibold text-emerald-700 tabular-nums whitespace-nowrap">
+                0/0 Verified
+              </span>
+            </div>
+
+            <div id="solved-checklist-container" class="mt-4 space-y-3"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- MODAL RESOLUSI (Wajib saat status diubah ke Solved) -->
+    <div
+      id="resolution-modal"
+      class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resolution-modal-title"
+    >
+      <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h2 id="resolution-modal-title" class="text-base font-bold text-slate-900">
+              Form Resolusi Penyelesaian E-Ticket
+            </h2>
+            <p id="resolution-modal-subtitle" class="mt-0.5 text-xs text-slate-500">
+              Lengkapi Root Cause, Action Taken, dan Teknisi PIC untuk memasukkan tiket ke Daily Checklist.
+            </p>
+          </div>
+          <button
+            type="button"
+            onclick="closeResolutionModal()"
+            aria-label="Tutup modal resolusi"
+            class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+
+        <!-- Ticket Context Summary -->
+        <div id="resolution-ticket-context" class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-700"></div>
+
+        <form id="resolution-form" novalidate class="mt-4 space-y-4">
+          <div id="resolution-form-error" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700" role="alert"></div>
+
+          <div>
+            <label for="res-root-cause" class="mb-1.5 block text-xs font-semibold text-slate-700">
+              1. Root Cause (Penyebab Masalah) <span class="text-red-600">*</span>
+            </label>
+            <textarea
+              id="res-root-cause"
+              rows="2"
+              required
+              placeholder="Contoh: Kabel patch cord port 12 switch mengalami kerusakan konektor."
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="res-action-taken" class="mb-1.5 block text-xs font-semibold text-slate-700">
+              2. Action Taken (Solusi yang Dilakukan) <span class="text-red-600">*</span>
+            </label>
+            <textarea
+              id="res-action-taken"
+              rows="3"
+              required
+              placeholder="Contoh: Mengganti kabel patch cord Cat6 baru dan verifikasi konektivitas user normal."
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="res-pic" class="mb-1.5 block text-xs font-semibold text-slate-700">
+              3. Teknisi PIC <span class="text-red-600">*</span>
+            </label>
+            <input
+              id="res-pic"
+              type="text"
+              list="pic-suggestions"
+              required
+              placeholder="Pilih atau ketik nama teknisi PIC"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20"
+            />
+            <datalist id="pic-suggestions">
+              <option value="Andi Pratama"></option>
+              <option value="Budi Santoso"></option>
+              <option value="Citra Lestari"></option>
+              <option value="Dimas Wijaya"></option>
+            </datalist>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              onclick="closeResolutionModal()"
+              class="min-h-[40px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              id="resolution-submit-btn"
+              class="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+            >
+              <i data-lucide="check-circle-2" class="h-4 w-4"></i>
+              <span>Simpan &amp; Tandai Solved</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL PREVIEW LAPORAN WA / EMAIL -->
+    <div
+      id="report-preview-modal"
+      class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="report-preview-title"
+    >
+      <div class="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+          <div>
+            <h2 id="report-preview-title" class="text-base font-bold text-slate-900">
+              Preview Laporan Sore (WhatsApp / Email)
+            </h2>
+            <p class="mt-0.5 text-xs text-slate-500">
+              Format teks siap tempel untuk grup WhatsApp tim IT atau email laporan harian.
+            </p>
+          </div>
+          <button
+            type="button"
+            onclick="closeReportPreviewModal()"
+            aria-label="Tutup preview laporan"
+            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+
+        <textarea
+          id="report-preview-textarea"
+          readonly
+          rows="14"
+          class="mt-4 w-full rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-xs leading-relaxed text-slate-800 focus:outline-none"
+        ></textarea>
+
+        <div class="mt-4 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onclick="closeReportPreviewModal()"
+            class="min-h-[40px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Tutup
+          </button>
+          <button
+            type="button"
+            onclick="copyFromPreviewModal()"
+            class="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+          >
+            <i data-lucide="copy" class="h-3.5 w-3.5"></i>
+            <span>Salin Teks Laporan</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS (Tanpa window.confirm) -->
+    <div
+      id="confirm-delete-modal"
+      class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-delete-title"
+    >
+      <div class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+        <h2 id="confirm-delete-title" class="text-base font-bold text-slate-900">Konfirmasi Hapus</h2>
+        <p id="confirm-delete-message" class="mt-2 text-xs leading-relaxed text-slate-600"></p>
+        <div class="mt-5 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onclick="closeDeleteModal()"
+            class="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            id="confirm-delete-action-btn"
+            class="min-h-[38px] rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-red-700"
+          >
+            Hapus Permanen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div
+      id="toast-container"
+      aria-live="polite"
+      class="no-print fixed bottom-5 right-5 z-50 flex max-w-sm flex-col gap-2"
+    ></div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        // =========================================================================
+        // 1. CONSTANTS & STORAGE KEYS
+        // =========================================================================
+        const STORAGE_KEYS = {
+          TICKETS: 'it_helpdesk_tickets_v1',
+          ROUTINES: 'it_helpdesk_routines_v1',
+          ROUTINE_CHECKS: 'it_helpdesk_routine_checks_v1',
+          ACTIVE_TAB: 'it_helpdesk_active_tab_v1',
+          VIEW_MODE: 'it_helpdesk_view_mode_v1',
+        };
+
+        const DEFAULT_PICS = [
+          'Andi Pratama',
+          'Budi Santoso',
+          'Citra Lestari',
+          'Dimas Wijaya',
+        ];
+
+        // =========================================================================
+        // 2. DATE & UTILITY HELPERS
+        // =========================================================================
+        function formatLocalDate(date = new Date()) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        function formatLocalTime(date = new Date()) {
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        }
+
+        function escapeHtml(value) {
+          return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        function escapeCsvCell(value) {
+          const str = String(value ?? '');
+          if (/[",\n\r]/.test(str)) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        }
+
+        function generateNextTicketId(tickets) {
+          let maxNum = 100;
+          for (const ticket of tickets) {
+            const match = /^TKT-(\d+)$/.exec(ticket.id);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (num > maxNum) maxNum = num;
+            }
+          }
+          return `TKT-${maxNum + 1}`;
+        }
+
+        // =========================================================================
+        // 3. SEED DATA (4 Initial Tickets: 2 Open, 1 In Progress, 1 Solved)
+        // =========================================================================
+        function createSeedTickets() {
+          const today = formatLocalDate(new Date());
+          return [
+            {
+              id: 'TKT-101',
+              userName: 'Rina Kusuma',
+              department: 'Finance',
+              category: 'Printer/Peripheral',
+              priority: 'High',
+              description:
+                'Printer faktur pajak Epson LQ-310 mengalami paper jam berulang saat mencetak invoice bulanan.',
+              status: 'Open',
+              pic: 'Belum Ditugaskan',
+              createdAt: new Date().toISOString(),
+              createdDate: today,
+              createdTime: '08:15',
+            },
+            {
+              id: 'TKT-102',
+              userName: 'Hendra Gunawan',
+              department: 'Operasional',
+              category: 'Network',
+              priority: 'Critical',
+              description:
+                'Koneksi jaringan LAN area gudang lantai 2 terputus total sehingga sistem WMS tidak dapat diakses.',
+              status: 'Open',
+              pic: 'Andi Pratama',
+              createdAt: new Date().toISOString(),
+              createdDate: today,
+              createdTime: '08:40',
+            },
+            {
+              id: 'TKT-103',
+              userName: 'Sari Wulandari',
+              department: 'HRD',
+              category: 'Server/Active Directory',
+              priority: 'Medium',
+              description:
+                'Akun Active Directory staf rekrutmen terkunci setelah gagal login 5 kali dan butuh sinkronisasi ulang.',
+              status: 'In Progress',
+              pic: 'Citra Lestari',
+              createdAt: new Date().toISOString(),
+              createdDate: today,
+              createdTime: '09:05',
+            },
+            {
+              id: 'TKT-104',
+              userName: 'Bagus Setiawan',
+              department: 'Sales & Marketing',
+              category: 'Software',
+              priority: 'Low',
+              description:
+                'Add-in pelaporan penjualan pada Microsoft Excel tidak muncul setelah pembaruan sistem semalam.',
+              status: 'Solved',
+              pic: 'Budi Santoso',
+              createdAt: new Date().toISOString(),
+              createdDate: today,
+              createdTime: '07:50',
+              rootCause:
+                'COM Add-in dinonaktifkan otomatis oleh Excel setelah update patch Office.',
+              actionTaken:
+                'Mengaktifkan kembali add-in melalui Trust Center, membersihkan cache Office, dan verifikasi ekspor laporan berjalan normal.',
+              solvedAt: new Date().toISOString(),
+              solvedDate: today,
+              solvedTime: '08:30',
+              verified: false,
+            },
+          ];
+        }
+
+        function createSeedRoutines() {
+          return [
+            {
+              id: 'RTN-1',
+              title: 'Cek status backup server harian (Veeam / Snapshot)',
+              category: 'Server',
+            },
+            {
+              id: 'RTN-2',
+              title: 'Monitoring trafik firewall, bandwidth ISP, & koneksi VPN',
+              category: 'Network',
+            },
+            {
+              id: 'RTN-3',
+              title: 'Cek kapasitas storage NAS & partisi server database',
+              category: 'Storage',
+            },
+            {
+              id: 'RTN-4',
+              title: 'Pemeriksaan suhu ruang server & status baterai UPS',
+              category: 'Server',
+            },
+            {
+              id: 'RTN-5',
+              title: 'Audit log endpoint protection & update signature antivirus',
+              category: 'Security',
+            },
+          ];
+        }
+
+        // =========================================================================
+        // 4. APPLICATION STATE & PERSISTENCE
+        // =========================================================================
+        const state = {
+          tickets: [],
+          routines: [],
+          routineChecksByDate: {},
+          activeTab: 'tickets',
+          viewMode: 'table',
+          selectedChecklistDate: formatLocalDate(new Date()),
+          filters: {
+            search: '',
+            status: 'All',
+            priority: 'All',
+            pic: 'All',
+          },
+          resolvingTicketId: null,
+          pendingDelete: null,
+        };
+
+        function loadState() {
+          try {
+            const rawTickets = localStorage.getItem(STORAGE_KEYS.TICKETS);
+            state.tickets = rawTickets ? JSON.parse(rawTickets) : createSeedTickets();
+            if (!Array.isArray(state.tickets)) state.tickets = createSeedTickets();
+          } catch {
+            state.tickets = createSeedTickets();
+          }
+
+          try {
+            const rawRoutines = localStorage.getItem(STORAGE_KEYS.ROUTINES);
+            state.routines = rawRoutines ? JSON.parse(rawRoutines) : createSeedRoutines();
+            if (!Array.isArray(state.routines)) state.routines = createSeedRoutines();
+          } catch {
+            state.routines = createSeedRoutines();
+          }
+
+          try {
+            const rawChecks = localStorage.getItem(STORAGE_KEYS.ROUTINE_CHECKS);
+            state.routineChecksByDate = rawChecks ? JSON.parse(rawChecks) : {};
+            if (typeof state.routineChecksByDate !== 'object' || state.routineChecksByDate === null) {
+              state.routineChecksByDate = {};
+            }
+          } catch {
+            state.routineChecksByDate = {};
+          }
+
+          const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB);
+          state.activeTab = savedTab === 'checklist' ? 'checklist' : 'tickets';
+
+          const savedView = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
+          state.viewMode = savedView === 'kanban' ? 'kanban' : 'table';
+
+          // Ensure initial seed exists in localStorage immediately
+          saveTickets();
+          saveRoutines();
+          saveRoutineChecks();
+        }
+
+        function saveTickets() {
+          localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(state.tickets));
+        }
+
+        function saveRoutines() {
+          localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(state.routines));
+        }
+
+        function saveRoutineChecks() {
+          localStorage.setItem(
+            STORAGE_KEYS.ROUTINE_CHECKS,
+            JSON.stringify(state.routineChecksByDate)
+          );
+        }
+
+        // =========================================================================
+        // 5. TOAST NOTIFICATION SYSTEM
+        // =========================================================================
+        function showToast(message, type = 'success', actionButton = null) {
+          const container = document.getElementById('toast-container');
+          const toast = document.createElement('div');
+          toast.className =
+            'toast-enter flex items-start gap-3 rounded-xl border bg-white px-4 py-3 shadow-lg';
+
+          const borderMap = {
+            success: 'border-emerald-200',
+            info: 'border-indigo-200',
+            warning: 'border-amber-200',
+            error: 'border-red-200',
+          };
+          const iconMap = {
+            success: { name: 'check-circle-2', color: 'text-emerald-600' },
+            info: { name: 'info', color: 'text-indigo-600' },
+            warning: { name: 'alert-triangle', color: 'text-amber-600' },
+            error: { name: 'alert-circle', color: 'text-red-600' },
+          };
+
+          toast.classList.add(borderMap[type] || 'border-slate-200');
+          const iconInfo = iconMap[type] || iconMap.info;
+
+          toast.innerHTML = `
+            <i data-lucide="${iconInfo.name}" class="mt-0.5 h-4 w-4 shrink-0 ${iconInfo.color}"></i>
+            <div class="flex-1 text-xs font-medium leading-relaxed text-slate-800">
+              <p>${escapeHtml(message)}</p>
+              ${
+                actionButton
+                  ? `<button type="button" class="toast-action-btn mt-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline">${escapeHtml(actionButton.label)}</button>`
+                  : ''
+              }
+            </div>
+            <button type="button" aria-label="Tutup notifikasi" class="toast-close-btn rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+              <i data-lucide="x" class="h-3.5 w-3.5"></i>
+            </button>
+          `;
+
+          if (actionButton && typeof actionButton.onClick === 'function') {
+            toast.querySelector('.toast-action-btn').addEventListener('click', () => {
+              actionButton.onClick();
+              toast.remove();
+            });
+          }
+
+          toast.querySelector('.toast-close-btn').addEventListener('click', () => {
+            toast.remove();
+          });
+
+          container.appendChild(toast);
+          lucide.createIcons({ nodes: [toast] });
+
+          setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+          }, 4200);
+        }
+
+        // =========================================================================
+        // 6. PURE DATA SELECTORS & COMPUTATIONS
+        // =========================================================================
+        function getSolvedTicketsForDate(dateStr) {
+          return state.tickets
+            .filter((t) => t.status === 'Solved' && t.solvedDate === dateStr)
+            .sort((a, b) => (a.solvedTime || '').localeCompare(b.solvedTime || ''));
+        }
+
+        function getCheckedRoutinesForDate(dateStr) {
+          const list = state.routineChecksByDate[dateStr];
+          return Array.isArray(list) ? list : [];
+        }
+
+        function getFilteredTickets() {
+          const q = state.filters.search.trim().toLowerCase();
+          return state.tickets.filter((t) => {
+            if (state.filters.status !== 'All' && t.status !== state.filters.status) {
+              return false;
+            }
+            if (state.filters.priority !== 'All' && t.priority !== state.filters.priority) {
+              return false;
+            }
+            if (state.filters.pic !== 'All') {
+              const ticketPic = t.pic || 'Belum Ditugaskan';
+              if (ticketPic !== state.filters.pic) return false;
+            }
+            if (q) {
+              const haystack = [
+                t.id,
+                t.userName,
+                t.department,
+                t.category,
+                t.description,
+                t.pic,
+                t.rootCause || '',
+                t.actionTaken || '',
+              ]
+                .join(' ')
+                .toLowerCase();
+              if (!haystack.includes(q)) return false;
+            }
+            return true;
+          });
+        }
+
+        function calculateChecklistProgress(dateStr) {
+          const checkedSet = new Set(getCheckedRoutinesForDate(dateStr));
+          const completedRoutines = state.routines.filter((r) => checkedSet.has(r.id)).length;
+          const solvedForDate = getSolvedTicketsForDate(dateStr);
+          const verifiedTickets = solvedForDate.filter((t) => Boolean(t.verified)).length;
+
+          const total = state.routines.length + solvedForDate.length;
+          const completed = completedRoutines + verifiedTickets;
+          const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+          return {
+            completed,
+            total,
+            percentage,
+            completedRoutines,
+            totalRoutines: state.routines.length,
+            verifiedTickets,
+            totalSolvedTickets: solvedForDate.length,
+          };
+        }
+
+        // =========================================================================
+        // 7. STYLING HELPERS (Semantic Label + Icon, Zero-Pill Clutter)
+        // =========================================================================
+        function renderStatusIndicator(status) {
+          if (status === 'Solved') {
+            return `<span class="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 whitespace-nowrap">
+              <i data-lucide="check-circle-2" class="h-3.5 w-3.5"></i>
+              <span>Solved</span>
+            </span>`;
+          }
+          if (status === 'In Progress') {
+            return `<span class="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 whitespace-nowrap">
+              <i data-lucide="loader-2" class="h-3.5 w-3.5"></i>
+              <span>In Progress</span>
+            </span>`;
+          }
+          return `<span class="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 whitespace-nowrap">
+            <i data-lucide="circle-dot" class="h-3.5 w-3.5"></i>
+            <span>Open</span>
+          </span>`;
+        }
+
+        function renderPriorityIndicator(priority) {
+          const map = {
+            Critical: {
+              cls: 'text-red-700 bg-red-50 border-red-200',
+              icon: 'flame',
+              label: 'Critical',
+            },
+            High: {
+              cls: 'text-orange-700 bg-orange-50 border-orange-200',
+              icon: 'arrow-up',
+              label: 'High',
+            },
+            Medium: {
+              cls: 'text-slate-700 bg-slate-100 border-slate-200',
+              icon: 'minus',
+              label: 'Medium',
+            },
+            Low: {
+              cls: 'text-slate-600 bg-white border-slate-200',
+              icon: 'arrow-down',
+              label: 'Low',
+            },
+          };
+          const cfg = map[priority] || map.Medium;
+          return `<span class="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${cfg.cls}">
+            <i data-lucide="${cfg.icon}" class="h-3 w-3"></i>
+            <span>${cfg.label}</span>
+          </span>`;
+        }
+
+        // =========================================================================
+        // 8. RENDERING FUNCTIONS
+        // =========================================================================
+        function renderKpis() {
+          const today = formatLocalDate(new Date());
+          const todayTickets = state.tickets.filter(
+            (t) => t.createdDate === today || t.solvedDate === today
+          );
+          const openCount = state.tickets.filter((t) => t.status === 'Open').length;
+          const inProgressCount = state.tickets.filter((t) => t.status === 'In Progress').length;
+          const solvedTodayCount = getSolvedTicketsForDate(today).length;
+          const progress = calculateChecklistProgress(today);
+
+          document.getElementById('kpi-total-today').textContent = String(todayTickets.length);
+          document.getElementById('kpi-today-date').textContent = today;
+          document.getElementById('kpi-active-count').textContent = String(
+            openCount + inProgressCount
+          );
+          document.getElementById(
+            'kpi-active-breakdown'
+          ).textContent = `${openCount} Open · ${inProgressCount} Proses`;
+          document.getElementById('kpi-solved-today').textContent = String(solvedTodayCount);
+          document.getElementById(
+            'kpi-checklist-fraction'
+          ).textContent = `${progress.completed}/${progress.total}`;
+          document.getElementById('kpi-checklist-percent').textContent = `${progress.percentage}%`;
+
+          const fillEl = document.getElementById('kpi-progress-bar-fill');
+          const barContainer = document.getElementById('kpi-progress-bar-container');
+          fillEl.style.width = `${progress.percentage}%`;
+          barContainer.setAttribute('aria-valuenow', String(progress.percentage));
+
+          if (progress.percentage === 100 && progress.total > 0) {
+            fillEl.classList.remove('bg-indigo-600');
+            fillEl.classList.add('bg-emerald-600');
+          } else {
+            fillEl.classList.remove('bg-emerald-600');
+            fillEl.classList.add('bg-indigo-600');
+          }
+        }
+
+        function renderPicFilterOptions() {
+          const select = document.getElementById('filter-pic');
+          const currentVal = state.filters.pic;
+          const picSet = new Set(['Belum Ditugaskan', ...DEFAULT_PICS]);
+          for (const t of state.tickets) {
+            if (t.pic) picSet.add(t.pic);
+          }
+          const options = ['<option value="All">PIC: Semua</option>'];
+          for (const pic of Array.from(picSet)) {
+            options.push(
+              `<option value="${escapeHtml(pic)}"${
+                currentVal === pic ? ' selected' : ''
+              }>PIC: ${escapeHtml(pic)}</option>`
+            );
+          }
+          select.innerHTML = options.join('');
+          select.value = currentVal;
+        }
+
+        function renderTicketsView() {
+          const container = document.getElementById('tickets-container');
+          const filtered = getFilteredTickets();
+
+          const summaryEl = document.getElementById('ticket-filter-summary');
+          summaryEl.textContent = `Menampilkan ${filtered.length} dari ${state.tickets.length} tiket`;
+
+          const hasActiveFilter =
+            state.filters.search.trim() !== '' ||
+            state.filters.status !== 'All' ||
+            state.filters.priority !== 'All' ||
+            state.filters.pic !== 'All';
+          const filterBar = document.getElementById('active-filter-bar');
+          if (hasActiveFilter) {
+            filterBar.classList.remove('hidden');
+            filterBar.classList.add('flex');
+          } else {
+            filterBar.classList.add('hidden');
+            filterBar.classList.remove('flex');
+          }
+
+          // Update view toggle active styles
+          const btnTable = document.getElementById('view-btn-table');
+          const btnKanban = document.getElementById('view-btn-kanban');
+          if (state.viewMode === 'table') {
+            btnTable.className =
+              'inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-xs whitespace-nowrap transition-colors';
+            btnKanban.className =
+              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors';
+          } else {
+            btnKanban.className =
+              'inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-xs whitespace-nowrap transition-colors';
+            btnTable.className =
+              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors';
+          }
+
+          if (state.viewMode === 'kanban') {
+            renderKanbanBoard(container, filtered);
+          } else {
+            renderTicketTable(container, filtered);
+          }
+
+          lucide.createIcons({ nodes: [container] });
+        }
+
+        function renderTicketActionButtons(t) {
+          const buttons = [];
+          if (t.status === 'Open') {
+            buttons.push(`
+              <button
+                type="button"
+                onclick="updateTicketStatus('${escapeHtml(t.id)}', 'In Progress')"
+                class="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 whitespace-nowrap"
+              >
+                <i data-lucide="play" class="h-3 w-3"></i>
+                <span>Proses</span>
+              </button>
+            `);
+            buttons.push(`
+              <button
+                type="button"
+                onclick="openResolutionModal('${escapeHtml(t.id)}')"
+                class="inline-flex min-h-[32px] items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 whitespace-nowrap"
+              >
+                <i data-lucide="check" class="h-3 w-3"></i>
+                <span>Selesaikan</span>
+              </button>
+            `);
+          } else if (t.status === 'In Progress') {
+            buttons.push(`
+              <button
+                type="button"
+                onclick="openResolutionModal('${escapeHtml(t.id)}')"
+                class="inline-flex min-h-[32px] items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 whitespace-nowrap"
+              >
+                <i data-lucide="check" class="h-3 w-3"></i>
+                <span>Selesaikan</span>
+              </button>
+            `);
+          } else {
+            buttons.push(`
+              <button
+                type="button"
+                onclick="openResolutionModal('${escapeHtml(t.id)}', true)"
+                class="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 whitespace-nowrap"
+              >
+                <i data-lucide="file-text" class="h-3 w-3"></i>
+                <span>Resolusi</span>
+              </button>
+            `);
+          }
+
+          buttons.push(`
+            <button
+              type="button"
+              onclick="requestDeleteTicket('${escapeHtml(t.id)}')"
+              aria-label="Hapus tiket ${escapeHtml(t.id)}"
+              class="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded-md border border-slate-200 bg-white p-1.5 text-slate-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            >
+              <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+            </button>
+          `);
+
+          return buttons.join('');
+        }
+
+        function renderTicketTable(container, tickets) {
+          if (tickets.length === 0) {
+            container.innerHTML = `
+              <div class="rounded-xl border border-slate-200 bg-white p-10 text-center">
+                <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <i data-lucide="inbox" class="h-5 w-5"></i>
+                </div>
+                <h3 class="mt-3 text-sm font-bold text-slate-900">Tidak ada tiket ditemukan</h3>
+                <p class="mt-1 text-xs text-slate-500">
+                  Coba ubah kata kunci pencarian atau reset filter lanjutan untuk melihat tiket lainnya.
+                </p>
+                <button
+                  type="button"
+                  onclick="resetFilters()"
+                  class="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+                  <span>Reset Filter</span>
+                </button>
+              </div>
+            `;
+            return;
+          }
+
+          const rowsHtml = tickets
+            .map(
+              (t) => `
+              <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50/80 last:border-b-0">
+                <td class="px-4 py-3.5 align-top whitespace-nowrap">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-xs font-semibold text-indigo-600 tabular-nums">${escapeHtml(t.id)}</span>
+                    <span aria-hidden="true" class="text-slate-300">&middot;</span>
+                    <span class="font-mono text-[11px] text-slate-500 tabular-nums">${escapeHtml(t.createdTime)}</span>
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-slate-900">${escapeHtml(t.userName)}</div>
+                  <div class="mt-0.5 text-xs text-slate-500">${escapeHtml(t.department)}</div>
+                </td>
+                <td class="px-4 py-3.5 align-top">
+                  <div class="text-[11px] font-semibold text-slate-500">${escapeHtml(t.category)}</div>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-700">${escapeHtml(t.description)}</p>
+                  ${
+                    t.status === 'Solved' && t.actionTaken
+                      ? `<p class="mt-1.5 text-[11px] leading-relaxed text-emerald-700"><span class="font-semibold">Solusi:</span> ${escapeHtml(t.actionTaken)}</p>`
+                      : ''
+                  }
+                </td>
+                <td class="px-4 py-3.5 align-top whitespace-nowrap">
+                  <div>${renderPriorityIndicator(t.priority)}</div>
+                  <div class="mt-1.5 text-xs ${t.pic === 'Belum Ditugaskan' ? 'text-slate-400 italic' : 'font-medium text-slate-700'}">
+                    ${escapeHtml(t.pic || 'Belum Ditugaskan')}
+                  </div>
+                </td>
+                <td class="px-4 py-3.5 align-top whitespace-nowrap">
+                  ${renderStatusIndicator(t.status)}
+                </td>
+                <td class="px-4 py-3.5 align-top text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    ${renderTicketActionButtons(t)}
+                  </div>
+                </td>
+              </tr>
+            `
+            )
+            .join('');
+
+          container.innerHTML = `
+            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 bg-slate-50/70 text-[11px] font-semibold text-slate-500">
+                      <th class="px-4 py-3 whitespace-nowrap">Tiket &amp; User</th>
+                      <th class="px-4 py-3">Kategori &amp; Deskripsi</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Prioritas &amp; PIC</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Status</th>
+                      <th class="px-4 py-3 text-right whitespace-nowrap">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }
+
+        function renderKanbanBoard(container, tickets) {
+          const columns = [
+            { status: 'Open', label: 'Open', accent: 'text-amber-700' },
+            { status: 'In Progress', label: 'In Progress', accent: 'text-indigo-700' },
+            { status: 'Solved', label: 'Solved', accent: 'text-emerald-700' },
+          ];
+
+          const colsHtml = columns
+            .map((col) => {
+              const colTickets = tickets.filter((t) => t.status === col.status);
+              const cardsHtml =
+                colTickets.length === 0
+                  ? `<div class="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                      Tidak ada tiket ${escapeHtml(col.label)}
+                    </div>`
+                  : colTickets
+                      .map(
+                        (t) => `
+                        <article class="rounded-lg border border-slate-200 bg-white p-3.5 transition-colors hover:border-slate-300">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="font-mono text-xs font-semibold text-indigo-600 tabular-nums">${escapeHtml(t.id)}</span>
+                            ${renderPriorityIndicator(t.priority)}
+                          </div>
+                          <h3 class="mt-2 text-sm font-semibold text-slate-900">${escapeHtml(t.userName)}</h3>
+                          <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                            <span>${escapeHtml(t.department)}</span>
+                            <span aria-hidden="true">&middot;</span>
+                            <span>${escapeHtml(t.category)}</span>
+                            <span aria-hidden="true">&middot;</span>
+                            <span class="font-mono tabular-nums">${escapeHtml(t.createdTime)}</span>
+                          </div>
+                          <p class="mt-2 text-xs leading-relaxed text-slate-700">${escapeHtml(t.description)}</p>
+                          <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[11px] text-slate-500">
+                            <span>PIC: <strong class="font-semibold text-slate-700">${escapeHtml(t.pic || 'Belum Ditugaskan')}</strong></span>
+                          </div>
+                          <div class="mt-2.5 flex flex-wrap items-center justify-end gap-1.5">
+                            ${renderTicketActionButtons(t)}
+                          </div>
+                        </article>
+                      `
+                      )
+                      .join('');
+
+              return `
+                <div class="rounded-xl border border-slate-200 bg-slate-100/70 p-3.5">
+                  <div class="mb-3 flex items-center justify-between">
+                    <h3 class="text-xs font-bold ${col.accent}">${escapeHtml(col.label)}</h3>
+                    <span class="font-mono text-xs font-semibold text-slate-600 tabular-nums">${colTickets.length}</span>
+                  </div>
+                  <div class="space-y-2.5">${cardsHtml}</div>
+                </div>
+              `;
+            })
+            .join('');
+
+          container.innerHTML = `<div class="grid grid-cols-1 gap-4 md:grid-cols-3">${colsHtml}</div>`;
+        }
+
+        function renderChecklistView() {
+          const dateStr = state.selectedChecklistDate;
+          document.getElementById('checklist-date-picker').value = dateStr;
+          document.getElementById('print-date-label').textContent = `Tanggal Checklist: ${dateStr}`;
+          document.getElementById(
+            'print-generated-label'
+          ).textContent = `Dicetak: ${formatLocalDate()} ${formatLocalTime()}`;
+
+          const progress = calculateChecklistProgress(dateStr);
+          document.getElementById(
+            'routine-progress-label'
+          ).textContent = `${progress.completedRoutines}/${progress.totalRoutines} Selesai`;
+          document.getElementById(
+            'solved-checklist-label'
+          ).textContent = `${progress.verifiedTickets}/${progress.totalSolvedTickets} Verified`;
+
+          // Render Seksi 1: Rutinitas Harian IT
+          const routineList = document.getElementById('routine-checklist-list');
+          const checkedSet = new Set(getCheckedRoutinesForDate(dateStr));
+
+          if (state.routines.length === 0) {
+            routineList.innerHTML = `
+              <li class="py-6 text-center text-xs text-slate-500">
+                Belum ada daftar rutinitas harian. Tambahkan tugas baru di atas.
+              </li>
+            `;
+          } else {
+            routineList.innerHTML = state.routines
+              .map((r) => {
+                const isChecked = checkedSet.has(r.id);
+                return `
+                  <li class="flex items-center justify-between gap-3 py-3">
+                    <label class="flex flex-1 cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        ${isChecked ? 'checked' : ''}
+                        onchange="toggleRoutineCheck('${escapeHtml(r.id)}')"
+                        class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                      />
+                      <span class="flex-1">
+                        <span class="block text-sm font-medium ${
+                          isChecked ? 'text-slate-400 line-through' : 'text-slate-900'
+                        }">${escapeHtml(r.title)}</span>
+                        <span class="mt-0.5 block text-[11px] text-slate-500">${escapeHtml(r.category)}</span>
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onclick="requestDeleteRoutine('${escapeHtml(r.id)}')"
+                      aria-label="Hapus rutinitas ${escapeHtml(r.title)}"
+                      class="no-print rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                    >
+                      <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                    </button>
+                  </li>
+                `;
+              })
+              .join('');
+          }
+
+          // Render Seksi 2: Tiket Solved Hari Ini (Auto-Checklist)
+          const solvedContainer = document.getElementById('solved-checklist-container');
+          const solvedTickets = getSolvedTicketsForDate(dateStr);
+
+          if (solvedTickets.length === 0) {
+            solvedContainer.innerHTML = `
+              <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+                <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-400 border border-slate-200">
+                  <i data-lucide="clipboard-list" class="h-5 w-5"></i>
+                </div>
+                <h3 class="mt-3 text-sm font-bold text-slate-900">Belum ada tiket Solved pada ${escapeHtml(dateStr)}</h3>
+                <p class="mt-1 text-xs text-slate-500">
+                  Setiap tiket yang diselesaikan melalui Modal Resolusi pada tanggal tersebut akan otomatis masuk ke sini.
+                </p>
+                <button
+                  type="button"
+                  onclick="switchTab('tickets')"
+                  class="no-print mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                >
+                  <span>Kelola E-Ticket</span>
+                </button>
+              </div>
+            `;
+          } else {
+            solvedContainer.innerHTML = `<div class="divide-y divide-slate-100">${solvedTickets
+              .map(
+                (t) => `
+                <article class="py-4 first:pt-1 last:pb-1 ${
+                  t.verified ? 'bg-emerald-50/30 -mx-2 px-2 rounded-lg' : ''
+                } transition-colors">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="space-y-1">
+                      <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span class="font-mono font-bold text-indigo-600 tabular-nums">${escapeHtml(t.id)}</span>
+                        <span aria-hidden="true" class="text-slate-300">&middot;</span>
+                        <span class="font-mono text-slate-600 tabular-nums">Selesai ${escapeHtml(t.solvedTime || '-')}</span>
+                        <span aria-hidden="true" class="text-slate-300">&middot;</span>
+                        <span class="font-semibold text-slate-800">${escapeHtml(t.userName)}</span>
+                        <span class="text-slate-500">(${escapeHtml(t.department)})</span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                        <span>${escapeHtml(t.category)}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        ${renderPriorityIndicator(t.priority)}
+                        <span aria-hidden="true">&middot;</span>
+                        <span>PIC: <strong class="font-semibold text-slate-700">${escapeHtml(t.pic)}</strong></span>
+                      </div>
+                    </div>
+
+                    <label class="inline-flex min-h-[36px] cursor-pointer items-center gap-2 rounded-lg border ${
+                      t.verified
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    } px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0">
+                      <input
+                        type="checkbox"
+                        ${t.verified ? 'checked' : ''}
+                        onchange="toggleSolvedTicketVerified('${escapeHtml(t.id)}')"
+                        class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                      />
+                      <span>Verified / Reported</span>
+                    </label>
+                  </div>
+
+                  <div class="mt-2.5 space-y-1 text-xs leading-relaxed text-slate-700">
+                    <div><span class="font-semibold text-slate-900">Keluhan:</span> ${escapeHtml(t.description)}</div>
+                    <div><span class="font-semibold text-slate-900">Root Cause:</span> ${escapeHtml(t.rootCause || '-')}</div>
+                    <div><span class="font-semibold text-emerald-800">Action Taken:</span> ${escapeHtml(t.actionTaken || '-')}</div>
+                  </div>
+                </article>
+              `
+              )
+              .join('')}</div>`;
+          }
+
+          lucide.createIcons({ nodes: [routineList, solvedContainer] });
+        }
+
+        function renderNavigation() {
+          const panelTickets = document.getElementById('panel-tickets');
+          const panelChecklist = document.getElementById('panel-checklist');
+          const navTickets = document.getElementById('nav-tab-tickets');
+          const navChecklist = document.getElementById('nav-tab-checklist');
+          const mobileTickets = document.getElementById('mobile-tab-tickets');
+          const mobileChecklist = document.getElementById('mobile-tab-checklist');
+
+          if (state.activeTab === 'tickets') {
+            panelTickets.classList.remove('hidden');
+            panelChecklist.classList.add('hidden');
+            navTickets.setAttribute('aria-selected', 'true');
+            navChecklist.setAttribute('aria-selected', 'false');
+
+            navTickets.className =
+              'relative border-b-2 border-indigo-600 py-2 text-sm font-semibold text-indigo-600 whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none';
+            navChecklist.className =
+              'relative border-b-2 border-transparent py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none';
+
+            mobileTickets.className =
+              'flex-1 border-b-2 border-indigo-600 py-2.5 text-center text-xs font-semibold text-indigo-600 whitespace-nowrap';
+            mobileChecklist.className =
+              'flex-1 border-b-2 border-transparent py-2.5 text-center text-xs font-semibold text-slate-500 whitespace-nowrap';
+          } else {
+            panelTickets.classList.add('hidden');
+            panelChecklist.classList.remove('hidden');
+            navTickets.setAttribute('aria-selected', 'false');
+            navChecklist.setAttribute('aria-selected', 'true');
+
+            navChecklist.className =
+              'relative border-b-2 border-indigo-600 py-2 text-sm font-semibold text-indigo-600 whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none';
+            navTickets.className =
+              'relative border-b-2 border-transparent py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none';
+
+            mobileChecklist.className =
+              'flex-1 border-b-2 border-indigo-600 py-2.5 text-center text-xs font-semibold text-indigo-600 whitespace-nowrap';
+            mobileTickets.className =
+              'flex-1 border-b-2 border-transparent py-2.5 text-center text-xs font-semibold text-slate-500 whitespace-nowrap';
+          }
+        }
+
+        function renderAll() {
+          renderNavigation();
+          renderKpis();
+          renderPicFilterOptions();
+          renderTicketsView();
+          renderChecklistView();
+          lucide.createIcons();
+        }
+
+        // =========================================================================
+        // 9. INTERACTIVE EVENT HANDLERS (Exposed globally for inline handlers)
+        // =========================================================================
+        window.switchTab = function (tab) {
+          state.activeTab = tab === 'checklist' ? 'checklist' : 'tickets';
+          localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, state.activeTab);
+          renderNavigation();
+          if (state.activeTab === 'checklist') {
+            renderChecklistView();
+          } else {
+            renderTicketsView();
+          }
+        };
+
+        window.focusNewTicketForm = function () {
+          window.switchTab('tickets');
+          const input = document.getElementById('ticket-user-name');
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => input.focus(), 120);
+        };
+
+        window.setViewMode = function (mode) {
+          state.viewMode = mode === 'kanban' ? 'kanban' : 'table';
+          localStorage.setItem(STORAGE_KEYS.VIEW_MODE, state.viewMode);
+          renderTicketsView();
+        };
+
+        window.handleFilterChange = function () {
+          state.filters.search = document.getElementById('filter-search').value;
+          state.filters.status = document.getElementById('filter-status').value;
+          state.filters.priority = document.getElementById('filter-priority').value;
+          state.filters.pic = document.getElementById('filter-pic').value;
+          renderTicketsView();
+        };
+
+        window.resetFilters = function () {
+          state.filters = { search: '', status: 'All', priority: 'All', pic: 'All' };
+          document.getElementById('filter-search').value = '';
+          document.getElementById('filter-status').value = 'All';
+          document.getElementById('filter-priority').value = 'All';
+          document.getElementById('filter-pic').value = 'All';
+          renderTicketsView();
+          showToast('Filter lanjutan telah direset.', 'info');
+        };
+
+        window.updateTicketStatus = function (ticketId, nextStatus) {
+          if (nextStatus === 'Solved') {
+            window.openResolutionModal(ticketId);
+            return;
+          }
+          const idx = state.tickets.findIndex((t) => t.id === ticketId);
+          if (idx === -1) return;
+          state.tickets[idx] = {
+            ...state.tickets[idx],
+            status: nextStatus,
+          };
+          saveTickets();
+          renderKpis();
+          renderTicketsView();
+          showToast(`Tiket ${ticketId} diperbarui ke status "${nextStatus}".`, 'info');
+        };
+
+        // Resolution Modal
+        window.openResolutionModal = function (ticketId, isViewOrEdit = false) {
+          const ticket = state.tickets.find((t) => t.id === ticketId);
+          if (!ticket) return;
+          state.resolvingTicketId = ticketId;
+
+          const modal = document.getElementById('resolution-modal');
+          const titleEl = document.getElementById('resolution-modal-title');
+          const subtitleEl = document.getElementById('resolution-modal-subtitle');
+          const submitBtn = document.getElementById('resolution-submit-btn');
+          const errorEl = document.getElementById('resolution-form-error');
+          errorEl.classList.add('hidden');
+
+          titleEl.textContent = isViewOrEdit
+            ? `Detail & Perbarui Resolusi (${ticket.id})`
+            : `Form Resolusi Penyelesaian (${ticket.id})`;
+          subtitleEl.textContent = isViewOrEdit
+            ? 'Anda dapat meninjau atau memperbarui catatan solusi pada Daily Checklist.'
+            : 'Wajib mengisi Root Cause, Action Taken, dan Teknisi PIC sebelum tiket berstatus Solved.';
+          submitBtn.querySelector('span').textContent = isViewOrEdit
+            ? 'Simpan Pembaruan Resolusi'
+            : 'Simpan & Tandai Solved';
+
+          document.getElementById('resolution-ticket-context').innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-semibold text-slate-900">${escapeHtml(ticket.userName)} (${escapeHtml(ticket.department)})</span>
+              <span class="font-mono text-[11px] font-semibold text-indigo-600">${escapeHtml(ticket.category)} · ${escapeHtml(ticket.priority)}</span>
+            </div>
+            <p class="mt-1 text-slate-600">${escapeHtml(ticket.description)}</p>
+          `;
+
+          document.getElementById('res-root-cause').value = ticket.rootCause || '';
+          document.getElementById('res-action-taken').value = ticket.actionTaken || '';
+          document.getElementById('res-pic').value =
+            ticket.pic && ticket.pic !== 'Belum Ditugaskan' ? ticket.pic : '';
+
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          lucide.createIcons({ nodes: [modal] });
+          setTimeout(() => document.getElementById('res-root-cause').focus(), 80);
+        };
+
+        window.closeResolutionModal = function () {
+          const modal = document.getElementById('resolution-modal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          state.resolvingTicketId = null;
+        };
+
+        // Delete confirmation modal
+        window.requestDeleteTicket = function (ticketId) {
+          state.pendingDelete = { type: 'ticket', id: ticketId };
+          document.getElementById(
+            'confirm-delete-message'
+          ).textContent = `Apakah Anda yakin ingin menghapus tiket ${ticketId}? Jika tiket sudah Solved, item terkait pada Daily Checklist juga akan terhapus.`;
+          const modal = document.getElementById('confirm-delete-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        };
+
+        window.requestDeleteRoutine = function (routineId) {
+          const routine = state.routines.find((r) => r.id === routineId);
+          state.pendingDelete = { type: 'routine', id: routineId };
+          document.getElementById(
+            'confirm-delete-message'
+          ).textContent = `Hapus rutinitas harian "${routine ? routine.title : routineId}" dari daftar pengecekan?`;
+          const modal = document.getElementById('confirm-delete-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        };
+
+        window.closeDeleteModal = function () {
+          const modal = document.getElementById('confirm-delete-modal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          state.pendingDelete = null;
+        };
+
+        // Checklist Date & Checkboxes
+        window.handleChecklistDateChange = function () {
+          const val = document.getElementById('checklist-date-picker').value;
+          state.selectedChecklistDate = val || formatLocalDate(new Date());
+          renderChecklistView();
+        };
+
+        window.selectTodayChecklistDate = function () {
+          state.selectedChecklistDate = formatLocalDate(new Date());
+          renderChecklistView();
+          showToast(`Menampilkan Daily Checklist tanggal ${state.selectedChecklistDate}.`, 'info');
+        };
+
+        window.toggleRoutineCheck = function (routineId) {
+          const dateStr = state.selectedChecklistDate;
+          const current = new Set(getCheckedRoutinesForDate(dateStr));
+          if (current.has(routineId)) {
+            current.delete(routineId);
+          } else {
+            current.add(routineId);
+          }
+          state.routineChecksByDate[dateStr] = Array.from(current);
+          saveRoutineChecks();
+          renderKpis();
+          renderChecklistView();
+        };
+
+        window.toggleSolvedTicketVerified = function (ticketId) {
+          const idx = state.tickets.findIndex((t) => t.id === ticketId);
+          if (idx === -1) return;
+          const nextVerified = !state.tickets[idx].verified;
+          state.tickets[idx] = {
+            ...state.tickets[idx],
+            verified: nextVerified,
+          };
+          saveTickets();
+          renderKpis();
+          renderChecklistView();
+          showToast(
+            nextVerified
+              ? `Tiket ${ticketId} ditandai Verified/Reported.`
+              : `Status verifikasi tiket ${ticketId} dibatalkan.`,
+            nextVerified ? 'success' : 'info'
+          );
+        };
+
+        // =========================================================================
+        // 10. END-OF-DAY EXPORT (WhatsApp/Email, CSV, Print PDF)
+        // =========================================================================
+        function generateWhatsAppText(dateStr) {
+          const checkedSet = new Set(getCheckedRoutinesForDate(dateStr));
+          const solvedTickets = getSolvedTicketsForDate(dateStr);
+          const progress = calculateChecklistProgress(dateStr);
+
+          const lines = [];
+          lines.push(`*LAPORAN HARIAN IT HELPDESK & CHECKLIST*`);
+          lines.push(`Tanggal: ${dateStr}`);
+          lines.push(
+            `Penyelesaian Checklist: ${progress.completed}/${progress.total} (${progress.percentage}%)`
+          );
+          lines.push('');
+          lines.push(`*1. Rutinitas Harian IT*`);
+          if (state.routines.length === 0) {
+            lines.push(`- Tidak ada item rutinitas.`);
+          } else {
+            for (const r of state.routines) {
+              const mark = checkedSet.has(r.id) ? '✅' : '⬜';
+              lines.push(`${mark} ${r.title} (${r.category})`);
+            }
+          }
+          lines.push('');
+          lines.push(`*2. Tiket Solved (${solvedTickets.length})*`);
+          if (solvedTickets.length === 0) {
+            lines.push(`- Belum ada tiket yang diselesaikan pada tanggal ini.`);
+          } else {
+            for (const t of solvedTickets) {
+              const mark = t.verified ? '✅' : '☑️';
+              lines.push(
+                `${mark} [${t.id}] ${t.userName} (${t.department}) — ${t.category} [${t.priority}]`
+              );
+              lines.push(`   • Selesai: ${t.solvedTime || '-'} | PIC: ${t.pic}`);
+              lines.push(`   • Root Cause: ${t.rootCause || '-'}`);
+              lines.push(`   • Solusi: ${t.actionTaken || '-'}`);
+            }
+          }
+          return lines.join('\n');
+        }
+
+        function openReportPreviewModal(text) {
+          document.getElementById('report-preview-textarea').value = text;
+          const modal = document.getElementById('report-preview-modal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          lucide.createIcons({ nodes: [modal] });
+        }
+
+        window.closeReportPreviewModal = function () {
+          const modal = document.getElementById('report-preview-modal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        };
+
+        window.copyFromPreviewModal = async function () {
+          const textarea = document.getElementById('report-preview-textarea');
+          textarea.select();
+          try {
+            await navigator.clipboard.writeText(textarea.value);
+            showToast('Laporan sore berhasil disalin ke clipboard.', 'success');
+          } catch {
+            document.execCommand('copy');
+            showToast('Laporan sore berhasil disalin ke clipboard.', 'success');
+          }
+        };
+
+        window.copyWhatsAppReport = async function () {
+          const text = generateWhatsAppText(state.selectedChecklistDate);
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+              showToast('Laporan WA/Email berhasil disalin ke clipboard.', 'success', {
+                label: 'Lihat Preview Teks',
+                onClick: () => openReportPreviewModal(text),
+              });
+              return;
+            }
+          } catch {
+            // Fall through to preview modal
+          }
+          openReportPreviewModal(text);
+          showToast('Silakan salin teks laporan dari jendela preview.', 'info');
+        };
+
+        window.exportChecklistCsv = function () {
+          const dateStr = state.selectedChecklistDate;
+          const checkedSet = new Set(getCheckedRoutinesForDate(dateStr));
+          const solvedTickets = getSolvedTicketsForDate(dateStr);
+
+          const headers = [
+            'Tanggal',
+            'Tipe',
+            'Referensi/ID',
+            'Judul/Deskripsi',
+            'User/Kategori',
+            'Prioritas',
+            'Jam Selesai',
+            'Root Cause',
+            'Action Taken',
+            'PIC',
+            'Status Verifikasi',
+          ];
+
+          const rows = [headers];
+
+          for (const r of state.routines) {
+            rows.push([
+              dateStr,
+              'Rutinitas Harian',
+              r.id,
+              r.title,
+              r.category,
+              '-',
+              '-',
+              '-',
+              '-',
+              'Tim IT',
+              checkedSet.has(r.id) ? 'Selesai' : 'Belum',
+            ]);
+          }
+
+          for (const t of solvedTickets) {
+            rows.push([
+              dateStr,
+              'Tiket Solved',
+              t.id,
+              t.description,
+              `${t.userName} (${t.department}) - ${t.category}`,
+              t.priority,
+              t.solvedTime || '-',
+              t.rootCause || '-',
+              t.actionTaken || '-',
+              t.pic,
+              t.verified ? 'Verified/Reported' : 'Menunggu Verifikasi',
+            ]);
+          }
+
+          const csvContent =
+            '\uFEFF' + rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `daily-checklist-${dateStr}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          showToast(`File daily-checklist-${dateStr}.csv berhasil diunduh.`, 'success');
+        };
+
+        window.printDailyReport = function () {
+          renderChecklistView();
+          window.print();
+        };
+
+        // =========================================================================
+        // 11. FORM SUBMISSIONS & MODAL LISTENERS
+        // =========================================================================
+        function setupEventListeners() {
+          // Form Create Ticket
+          document.getElementById('create-ticket-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('create-form-error');
+            const userName = document.getElementById('ticket-user-name').value.trim();
+            const department = document.getElementById('ticket-department').value.trim();
+            const category = document.getElementById('ticket-category').value;
+            const priority = document.getElementById('ticket-priority').value;
+            const pic = document.getElementById('ticket-pic').value || 'Belum Ditugaskan';
+            const description = document.getElementById('ticket-description').value.trim();
+
+            if (!userName || !department || !description) {
+              errorEl.textContent =
+                'Nama User, Departemen, dan Deskripsi Masalah wajib diisi.';
+              errorEl.classList.remove('hidden');
+              return;
+            }
+            errorEl.classList.add('hidden');
+
+            const now = new Date();
+            const newTicket = {
+              id: generateNextTicketId(state.tickets),
+              userName,
+              department,
+              category,
+              priority,
+              description,
+              status: 'Open',
+              pic,
+              createdAt: now.toISOString(),
+              createdDate: formatLocalDate(now),
+              createdTime: formatLocalTime(now),
+            };
+
+            state.tickets.unshift(newTicket);
+            saveTickets();
+            e.target.reset();
+            document.getElementById('ticket-priority').value = 'Medium';
+            document.getElementById('ticket-pic').value = 'Belum Ditugaskan';
+
+            renderKpis();
+            renderPicFilterOptions();
+            renderTicketsView();
+            showToast(`E-Ticket ${newTicket.id} untuk ${newTicket.userName} berhasil dibuat.`, 'success');
+          });
+
+          // Form Resolution Modal
+          document.getElementById('resolution-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('resolution-form-error');
+            const rootCause = document.getElementById('res-root-cause').value.trim();
+            const actionTaken = document.getElementById('res-action-taken').value.trim();
+            const pic = document.getElementById('res-pic').value.trim();
+
+            if (!rootCause || !actionTaken || !pic) {
+              errorEl.textContent =
+                'Root Cause, Action Taken, dan Teknisi PIC wajib diisi lengkap.';
+              errorEl.classList.remove('hidden');
+              return;
+            }
+            errorEl.classList.add('hidden');
+
+            const idx = state.tickets.findIndex((t) => t.id === state.resolvingTicketId);
+            if (idx === -1) {
+              window.closeResolutionModal();
+              return;
+            }
+
+            const existing = state.tickets[idx];
+            const now = new Date();
+            const isAlreadySolved = existing.status === 'Solved';
+            const solvedDate = isAlreadySolved && existing.solvedDate ? existing.solvedDate : formatLocalDate(now);
+            const solvedTime = isAlreadySolved && existing.solvedTime ? existing.solvedTime : formatLocalTime(now);
+
+            state.tickets[idx] = {
+              ...existing,
+              status: 'Solved',
+              pic,
+              rootCause,
+              actionTaken,
+              solvedAt: existing.solvedAt || now.toISOString(),
+              solvedDate,
+              solvedTime,
+              verified: isAlreadySolved ? Boolean(existing.verified) : false,
+            };
+
+            saveTickets();
+            const resolvedId = existing.id;
+            window.closeResolutionModal();
+
+            renderKpis();
+            renderPicFilterOptions();
+            renderTicketsView();
+            renderChecklistView();
+
+            showToast(
+              isAlreadySolved
+                ? `Resolusi tiket ${resolvedId} berhasil diperbarui.`
+                : `Tiket ${resolvedId} Solved & otomatis masuk ke Daily Checklist (${solvedDate}).`,
+              'success',
+              {
+                label: 'Buka Daily Checklist',
+                onClick: () => {
+                  state.selectedChecklistDate = solvedDate;
+                  window.switchTab('checklist');
+                },
+              }
+            );
+          });
+
+          // Form Add Routine
+          document.getElementById('add-routine-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const inputEl = document.getElementById('new-routine-title');
+            const catEl = document.getElementById('new-routine-category');
+            const title = inputEl.value.trim();
+            if (!title) {
+              inputEl.focus();
+              return;
+            }
+
+            const newRoutine = {
+              id: `RTN-${Date.now()}`,
+              title,
+              category: catEl.value,
+            };
+            state.routines.push(newRoutine);
+            saveRoutines();
+            inputEl.value = '';
+            renderKpis();
+            renderChecklistView();
+            showToast(`Rutinitas "${title}" ditambahkan ke Daily Checklist.`, 'success');
+          });
+
+          // Confirm Delete Button
+          document.getElementById('confirm-delete-action-btn').addEventListener('click', () => {
+            if (!state.pendingDelete) return;
+            const { type, id } = state.pendingDelete;
+
+            if (type === 'ticket') {
+              state.tickets = state.tickets.filter((t) => t.id !== id);
+              saveTickets();
+              renderKpis();
+              renderPicFilterOptions();
+              renderTicketsView();
+              renderChecklistView();
+              showToast(`Tiket ${id} telah dihapus.`, 'info');
+            } else if (type === 'routine') {
+              state.routines = state.routines.filter((r) => r.id !== id);
+              for (const dateKey of Object.keys(state.routineChecksByDate)) {
+                state.routineChecksByDate[dateKey] = state.routineChecksByDate[dateKey].filter(
+                  (rid) => rid !== id
+                );
+              }
+              saveRoutines();
+              saveRoutineChecks();
+              renderKpis();
+              renderChecklistView();
+              showToast('Item rutinitas harian telah dihapus.', 'info');
+            }
+            window.closeDeleteModal();
+          });
+
+          // Close modals on Escape key
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+              window.closeResolutionModal();
+              window.closeDeleteModal();
+              window.closeReportPreviewModal();
+            }
+          });
+        }
+
+        // =========================================================================
+        // 12. BOOTSTRAP APPLICATION
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+          loadState();
+          setupEventListeners();
+          renderAll();
+        });
+      })();
+    </script>
+  </body>
+</html>

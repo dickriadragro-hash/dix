@@ -1,0 +1,6 @@
+{
+  "name": "IT Helpdesk E-Ticket & Auto Daily Checklist",
+  "description": "Enterprise IT Helpdesk E-Ticket management with automatic Daily Checklist generation and end-of-day WhatsApp, CSV, and PDF reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
